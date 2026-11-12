@@ -1,16 +1,20 @@
 # Dependencies
 node_modules/
-client/node_modules/
-server/node_modules/
+**/node_modules/
 
 # Environment secrets
 .env
+.env.*
 server/.env
 client/.env
+!.env.example
+!server/.env.example
 
-# Build output
+# Build & coverage output
 dist/
 client/dist/
+build/
+coverage/
 
 # Logs
 *.log
@@ -23,4 +27,3 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
-
