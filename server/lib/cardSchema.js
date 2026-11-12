@@ -4,40 +4,49 @@
 
 import { z } from 'zod';
 
+const nonEmptyTrimmed = (field) =>
+  z.string().trim().min(1, `${field} must not be empty`);
+
 // ── Sub-schemas ────────────────────────────────────────────────────────────────
 
 const ConceptSchema = z.object({
-  term: z.string().min(1, 'term must not be empty'),
-  definition: z.string().min(1, 'definition must not be empty'),
+  term: nonEmptyTrimmed('term'),
+  definition: nonEmptyTrimmed('definition'),
 });
 
 const FlashcardSchema = z.object({
-  front: z.string().min(1, 'front must not be empty'),
-  back: z.string().min(1, 'back must not be empty'),
+  front: nonEmptyTrimmed('front'),
+  back: nonEmptyTrimmed('back'),
 });
 
 const QuizItemSchema = z.object({
-  question: z.string().min(1, 'question must not be empty'),
+  question: nonEmptyTrimmed('question'),
   options: z
-    .array(z.string().min(1, 'option must not be empty'))
+    .array(nonEmptyTrimmed('option'))
     .length(4, 'each quiz item must have exactly 4 options'),
   answerIndex: z
     .number()
     .int()
     .min(0)
     .max(3, 'answerIndex must be 0–3'),
-  explanation: z.string().min(1, 'explanation must not be empty'),
+  explanation: nonEmptyTrimmed('explanation'),
 });
 
 // ── Root schema ────────────────────────────────────────────────────────────────
 
 export const StudyCardSchema = z.object({
-  title: z.string().min(1, 'title must not be empty'),
-  summary: z.string().min(1, 'summary must not be empty'),
+  title: nonEmptyTrimmed('title'),
+  summary: nonEmptyTrimmed('summary'),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
   concepts: z.array(ConceptSchema).min(1, 'at least one concept required'),
-  flashcards: z.array(FlashcardSchema).min(1, 'at least one flashcard required'),
-  quiz: z.array(QuizItemSchema).min(1, 'at least one quiz item required'),
+  flashcards: z
+    .array(FlashcardSchema)
+    .min(5, 'at least 5 flashcards required')
+    .max(10, 'at most 10 flashcards required'),
+  quiz: z
+    .array(QuizItemSchema)
+    .min(5, 'at least 5 quiz questions required')
+    .max(10, 'at most 10 quiz questions required'),
 });
 
 // ── JSON Schema for Groq structured output ─────────────────────────────────────
@@ -64,6 +73,8 @@ export const studyCardJsonSchema = {
     },
     flashcards: {
       type: 'array',
+      minItems: 5,
+      maxItems: 10,
       items: {
         type: 'object',
         properties: {
@@ -76,6 +87,8 @@ export const studyCardJsonSchema = {
     },
     quiz: {
       type: 'array',
+      minItems: 5,
+      maxItems: 10,
       items: {
         type: 'object',
         properties: {
@@ -97,4 +110,3 @@ export const studyCardJsonSchema = {
   required: ['title', 'summary', 'difficulty', 'concepts', 'flashcards', 'quiz'],
   additionalProperties: false,
 };
-

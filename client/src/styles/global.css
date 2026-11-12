@@ -1,9 +1,14 @@
-/* global.css — Mobile-first design tokens, layout, and accessible base controls */
+/* global.css — Centralized light & dark theme tokens, mobile-first layout, and base controls */
 
 :root {
+  color-scheme: light;
+
   --bg-page: #f8fafc;
   --bg-surface: #ffffff;
   --bg-subtle: #f1f5f9;
+  --bg-secondary-hover: #e2e8f0;
+  --bg-input: #ffffff;
+
   --border-color: #e2e8f0;
   --border-strong: #cbd5e1;
 
@@ -15,8 +20,13 @@
   --accent-hover: #4338ca;
   --accent-soft: #eef2ff;
   --accent-border: #c7d2fe;
+  --btn-primary-text: #ffffff;
+
+  --focus-ring: #4f46e5;
+  --focus-ring-shadow: rgba(79, 70, 229, 0.18);
 
   --success-bg: #dcfce7;
+  --success-surface: #f0fdf4;
   --success-text: #166534;
   --success-border: #86efac;
 
@@ -25,8 +35,22 @@
   --warning-border: #fde047;
 
   --danger-bg: #fee2e2;
+  --danger-surface: #fef2f2;
   --danger-text: #991b1b;
   --danger-border: #fca5a5;
+  --danger-focus-shadow: rgba(220, 38, 38, 0.16);
+
+  --badge-beginner-bg: #dcfce7;
+  --badge-beginner-text: #166534;
+  --badge-beginner-border: #86efac;
+
+  --badge-intermediate-bg: #fef9c3;
+  --badge-intermediate-text: #854d0e;
+  --badge-intermediate-border: #fde047;
+
+  --badge-advanced-bg: #fee2e2;
+  --badge-advanced-text: #991b1b;
+  --badge-advanced-border: #fca5a5;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -35,6 +59,62 @@
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-page: #0b1120;
+  --bg-surface: #111827;
+  --bg-subtle: #1e293b;
+  --bg-secondary-hover: #334155;
+  --bg-input: #0f172a;
+
+  --border-color: #1f2937;
+  --border-strong: #334155;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.16);
+  --accent-border: rgba(129, 140, 248, 0.45);
+  --btn-primary-text: #ffffff;
+
+  --focus-ring: #818cf8;
+  --focus-ring-shadow: rgba(129, 140, 248, 0.28);
+
+  --success-bg: rgba(34, 197, 94, 0.18);
+  --success-surface: rgba(34, 197, 94, 0.12);
+  --success-text: #86efac;
+  --success-border: rgba(74, 222, 128, 0.45);
+
+  --warning-bg: rgba(234, 179, 8, 0.18);
+  --warning-text: #fde047;
+  --warning-border: rgba(250, 204, 21, 0.45);
+
+  --danger-bg: rgba(239, 68, 68, 0.18);
+  --danger-surface: rgba(239, 68, 68, 0.12);
+  --danger-text: #fca5a5;
+  --danger-border: rgba(248, 113, 113, 0.45);
+  --danger-focus-shadow: rgba(248, 113, 113, 0.25);
+
+  --badge-beginner-bg: rgba(34, 197, 94, 0.18);
+  --badge-beginner-text: #86efac;
+  --badge-beginner-border: rgba(74, 222, 128, 0.45);
+
+  --badge-intermediate-bg: rgba(234, 179, 8, 0.18);
+  --badge-intermediate-text: #fde047;
+  --badge-intermediate-border: rgba(250, 204, 21, 0.45);
+
+  --badge-advanced-bg: rgba(239, 68, 68, 0.18);
+  --badge-advanced-text: #fca5a5;
+  --badge-advanced-border: rgba(248, 113, 113, 0.45);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
 *,
@@ -62,7 +142,7 @@ body {
 
 /* Visible focus indicator for keyboard navigation */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -89,7 +169,7 @@ body {
 .app-header {
   background-color: var(--bg-surface);
   border-bottom: 1px solid var(--border-color);
-  padding: 1.25rem 1rem;
+  padding: 1.125rem 1rem;
 }
 
 .app-header-inner {
@@ -100,10 +180,18 @@ body {
   gap: 0.5rem;
 }
 
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .brand {
   display: flex;
   align-items: center;
   gap: 0.625rem;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -114,7 +202,7 @@ body {
   height: 34px;
   border-radius: 9px;
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--btn-primary-text);
   font-weight: 700;
   font-size: 0.875rem;
   letter-spacing: 0.02em;
@@ -134,6 +222,13 @@ body {
   max-width: 62ch;
 }
 
+.theme-toggle {
+  min-height: 40px;
+  padding: 0.4375rem 0.875rem;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
 .app-main {
   width: 100%;
   max-width: 1040px;
@@ -144,7 +239,7 @@ body {
   gap: 1.25rem;
 }
 
-/* ── Shared Card & Section Patterns ────────────────────────────────────────── */
+/* ── Shared Card, Progress Bar & Section Patterns ──────────────────────────── */
 
 .card {
   background-color: var(--bg-surface);
@@ -160,7 +255,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
   flex-wrap: wrap;
 }
 
@@ -190,6 +285,28 @@ body {
   font-size: 0.9375rem;
 }
 
+.progress-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--bg-subtle);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--accent);
+  transition: width 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+}
+
 /* ── Shared Buttons ────────────────────────────────────────────────────────── */
 
 .btn {
@@ -217,7 +334,7 @@ body {
 
 .btn-primary {
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--btn-primary-text);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -227,11 +344,11 @@ body {
 .btn-secondary {
   background-color: var(--bg-subtle);
   color: var(--text-primary);
-  border-color: var(--border-color);
+  border-color: var(--border-strong);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #e2e8f0;
+  background-color: var(--bg-secondary-hover);
 }
 
 .btn-outline {

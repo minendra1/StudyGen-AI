@@ -22,6 +22,7 @@ export default function Flashcards({ flashcards }) {
   const total = cards.length;
   const safeIndex = currentIndex < total ? currentIndex : 0;
   const currentCard = cards[safeIndex];
+  const progressPercent = Math.round(((safeIndex + 1) / total) * 100);
 
   function handleFlip() {
     setIsFlipped((prev) => !prev);
@@ -46,6 +47,17 @@ export default function Flashcards({ flashcards }) {
         <span className="flashcard-progress" aria-live="polite">
           Card {safeIndex + 1} of {total}
         </span>
+      </div>
+
+      <div
+        className="progress-track"
+        role="progressbar"
+        aria-label="Flashcard progress"
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-valuenow={safeIndex + 1}
+      >
+        <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
       </div>
 
       <div className="flashcard-scene">
@@ -104,4 +116,3 @@ export default function Flashcards({ flashcards }) {
     </section>
   );
 }
-

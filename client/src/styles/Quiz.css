@@ -128,7 +128,7 @@
 
 .quiz-option--correct {
   border-color: var(--success-border);
-  background-color: #f0fdf4;
+  background-color: var(--success-surface);
 }
 
 .quiz-option--correct .quiz-option-letter {
@@ -138,7 +138,7 @@
 
 .quiz-option--incorrect {
   border-color: var(--danger-border);
-  background-color: #fef2f2;
+  background-color: var(--danger-surface);
 }
 
 .quiz-option--incorrect .quiz-option-letter {
@@ -163,12 +163,12 @@
 }
 
 .quiz-feedback--correct {
-  background-color: #f0fdf4;
+  background-color: var(--success-surface);
   border-color: var(--success-border);
 }
 
 .quiz-feedback--incorrect {
-  background-color: #fef2f2;
+  background-color: var(--danger-surface);
   border-color: var(--danger-border);
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import '../styles/Quiz.css';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
@@ -13,6 +13,8 @@ export default function QuizSection({ quiz }) {
   const [missedQuestions, setMissedQuestions] = useState([]);
   const [isComplete, setIsComplete] = useState(false);
   const [isRetest, setIsRetest] = useState(false);
+
+  const headingRef = useRef(null);
 
   if (questionsPool.length === 0) {
     return (
@@ -32,6 +34,11 @@ export default function QuizSection({ quiz }) {
   const hasAnswered = selectedOption !== null;
   const isCorrectSelection = hasAnswered && selectedOption === currentQuestion.answerIndex;
   const isLastQuestion = currentIndex + 1 >= total;
+  const progressPercent = Math.round(((currentIndex + 1) / total) * 100);
+
+  function focusQuizTop() {
+    queueMicrotask(() => headingRef.current?.focus());
+  }
 
   function handleSelectOption(optionIndex) {
     // Prevent changing answer after submitting it.
@@ -54,6 +61,7 @@ export default function QuizSection({ quiz }) {
       setCurrentIndex((idx) => idx + 1);
       setSelectedOption(null);
     }
+    focusQuizTop();
   }
 
   function handleRetestMissed() {
@@ -65,6 +73,7 @@ export default function QuizSection({ quiz }) {
     setMissedQuestions([]);
     setIsComplete(false);
     setIsRetest(true);
+    focusQuizTop();
   }
 
   if (isComplete) {
@@ -74,7 +83,7 @@ export default function QuizSection({ quiz }) {
     return (
       <section className="card quiz-card" aria-labelledby="quiz-heading">
         <div className="section-header">
-          <h3 id="quiz-heading" className="section-title">
+          <h3 id="quiz-heading" ref={headingRef} tabIndex={-1} className="section-title">
             {isRetest ? 'Retest Complete' : 'Quiz Complete'}
           </h3>
         </div>
@@ -124,7 +133,7 @@ export default function QuizSection({ quiz }) {
     <section className="card quiz-card" aria-labelledby="quiz-heading">
       <div className="section-header">
         <div className="quiz-title-group">
-          <h3 id="quiz-heading" className="section-title">
+          <h3 id="quiz-heading" ref={headingRef} tabIndex={-1} className="section-title">
             Practice Quiz
           </h3>
           {isRetest && <span className="quiz-retest-pill">Retest Mode</span>}
@@ -137,6 +146,17 @@ export default function QuizSection({ quiz }) {
             Question {currentIndex + 1} of {total}
           </span>
         </div>
+      </div>
+
+      <div
+        className="progress-track"
+        role="progressbar"
+        aria-label="Quiz progress"
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-valuenow={currentIndex + 1}
+      >
+        <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
       </div>
 
       <div className="quiz-question-block">
@@ -210,4 +230,3 @@ export default function QuizSection({ quiz }) {
     </section>
   );
 }
-

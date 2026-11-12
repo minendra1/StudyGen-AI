@@ -10,7 +10,7 @@ const INITIAL_STATE = {
  * Defensive runtime validation on the client to ensure we never render
  * partially received or structurally invalid study data.
  */
-function isValidStudyData(payload) {
+export function isValidStudyData(payload) {
   if (!payload || typeof payload !== 'object') return false;
 
   const { title, summary, difficulty, concepts, flashcards, quiz } = payload;
@@ -25,13 +25,13 @@ function isValidStudyData(payload) {
   );
   if (!validConcepts) return false;
 
-  if (!Array.isArray(flashcards) || flashcards.length === 0) return false;
+  if (!Array.isArray(flashcards) || flashcards.length < 5 || flashcards.length > 10) return false;
   const validFlashcards = flashcards.every(
     (f) => f && typeof f.front === 'string' && f.front.trim() && typeof f.back === 'string' && f.back.trim(),
   );
   if (!validFlashcards) return false;
 
-  if (!Array.isArray(quiz) || quiz.length === 0) return false;
+  if (!Array.isArray(quiz) || quiz.length < 5 || quiz.length > 10) return false;
   const validQuiz = quiz.every(
     (q) =>
       q &&
@@ -65,6 +65,7 @@ export function useStudyGen() {
   // Abort any in-flight request when the component unmounts.
   useEffect(() => {
     return () => {
+      requestIdRef.current += 1;
       controllerRef.current?.abort();
     };
   }, []);

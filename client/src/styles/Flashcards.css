@@ -15,7 +15,7 @@
   position: relative;
   display: grid;
   width: 100%;
-  min-height: 220px;
+  min-height: 230px;
   padding: 0;
   border: none;
   background: transparent;
@@ -40,11 +40,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.25rem;
+  padding: 1.375rem 1.25rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-sm);
-  min-height: 220px;
+  min-height: 230px;
   overflow-wrap: anywhere;
 }
 
@@ -75,7 +75,7 @@
 .flashcard-content {
   font-size: 1.0625rem;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.6;
   max-width: 100%;
 }
 

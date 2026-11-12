@@ -1,12 +1,12 @@
 // server/lib/groqClient.js
 // Wraps the Groq SDK. Calls the chat completion API with structured JSON output.
 
-import Groq from 'groq-sdk';
+import Groq, { APIConnectionTimeoutError, APIUserAbortError } from 'groq-sdk';
 import { studyCardJsonSchema } from './cardSchema.js';
 import { AppError, ErrorCode } from './errors.js';
 
 const MODEL = 'openai/gpt-oss-20b';
-const TIMEOUT_MS = 30_000; // 30 seconds
+const DEFAULT_TIMEOUT_MS = 30_000; // 30 seconds
 
 // Lazy singleton — only created on the first actual call.
 // This lets index.js validate the env var and print a helpful message
@@ -25,31 +25,50 @@ The JSON must contain:
 - title: a clear, descriptive title for the topic
 - summary: a 2–4 sentence plain-language overview
 - difficulty: exactly one of "beginner", "intermediate", or "advanced"
-- concepts: an array of key concept objects, each with "term" and "definition"
-- flashcards: an array of flashcard objects, each with "front" (question or term) and "back" (answer or explanation)
-- quiz: an array of multiple-choice question objects. Each question must have:
+- concepts: an array of key concept objects, each with "term" and "definition" (at least 3 concepts)
+- flashcards: an array of 8 flashcard objects by default (minimum 5, maximum 10), covering different important concepts with no duplicates. Each flashcard has:
+    - "front": a concise question or term
+    - "back": an accurate, revision-friendly answer or explanation
+- quiz: an array of 8 multiple-choice question objects by default (minimum 5, maximum 10), covering different concepts with no duplicate or ambiguous questions. Each question must have:
     - "question": the question text
-    - "options": an array of exactly 4 strings (the answer choices)
-    - "answerIndex": an integer 0–3 indicating which option is correct
-    - "explanation": a sentence explaining why that answer is correct
+    - "options": an array of exactly 4 distinct answer choices
+    - "answerIndex": an integer 0–3 indicating the single correct option
+    - "explanation": a clear sentence explaining why that answer is correct
 
-Generate at least 3 concepts, 3 flashcards, and 3 quiz questions.`;
+Ensure flashcards has between 5 and 10 items (target 8) and quiz has between 5 and 10 items (target 8).`;
 
 /**
  * Calls the Groq API and returns a raw parsed JSON object (not yet Zod-validated).
  *
  * @param {string} topic  User-supplied study topic
+ * @param {object} [options]
+ * @param {AbortSignal} [options.signal]     Optional external abort signal (e.g. client disconnect)
+ * @param {number} [options.timeoutMs]       Override timeout in ms (defaults to 30,000 ms)
+ * @param {object} [options.client]          Optional Groq-compatible client for testing
  * @returns {Promise<unknown>}  Parsed JSON from the model
  * @throws {AppError}  On timeout, upstream failure, or malformed response
  */
-export async function generateStudyCard(topic) {
-  // AbortController provides the 30-second timeout.
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+export async function generateStudyCard(topic, options = {}) {
+  const {
+    signal: externalSignal,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    client = getGroq(),
+  } = options;
+
+  const timeoutController = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    timeoutController.abort();
+  }, timeoutMs);
+
+  const combinedSignal = externalSignal
+    ? AbortSignal.any([timeoutController.signal, externalSignal])
+    : timeoutController.signal;
 
   let completion;
   try {
-    completion = await getGroq().chat.completions.create(
+    completion = await client.chat.completions.create(
       {
         model: MODEL,
         temperature: 0.3,
@@ -67,18 +86,27 @@ export async function generateStudyCard(topic) {
           { role: 'user', content: `Topic: ${topic}` },
         ],
       },
-      { signal: controller.signal },
+      { signal: combinedSignal },
     );
   } catch (err) {
-    // AbortError → timeout
-    if (err.name === 'AbortError' || err.code === 'ERR_OPERATION_ABORTED') {
+    // Timeout (either our 30s AbortController or Groq SDK's APIConnectionTimeoutError)
+    if (
+      timedOut ||
+      err instanceof APIConnectionTimeoutError ||
+      (!externalSignal?.aborted &&
+        (err instanceof APIUserAbortError || err?.name === 'AbortError' || err?.code === 'ERR_OPERATION_ABORTED'))
+    ) {
       throw new AppError(504, ErrorCode.TIMEOUT, 'The AI request timed out. Please try again.');
+    }
+
+    // Client disconnected prematurely
+    if (externalSignal?.aborted && (err instanceof APIUserAbortError || err?.name === 'AbortError')) {
+      throw new AppError(499, ErrorCode.UPSTREAM_FAILURE, 'Request was cancelled by the client.');
     }
 
     // Groq SDK surfaces API errors as instances with a .status property.
     const status = err?.status;
     if (status === 401 || status === 403) {
-      // Log server-side only — never forward auth details to client.
       console.error('[groqClient] authentication error — check GROQ_API_KEY');
       throw new AppError(502, ErrorCode.UPSTREAM_FAILURE, 'AI service authentication failed.');
     }

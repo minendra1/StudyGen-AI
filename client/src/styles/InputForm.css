@@ -35,7 +35,7 @@
   font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--text-primary);
-  background-color: var(--bg-surface);
+  background-color: var(--bg-input);
   resize: vertical;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -46,17 +46,17 @@
 
 .input-textarea:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 3px var(--focus-ring-shadow);
 }
 
 .input-textarea--error {
-  border-color: #dc2626;
+  border-color: var(--danger-border);
 }
 
 .input-textarea--error:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  border-color: var(--danger-border);
+  box-shadow: 0 0 0 3px var(--danger-focus-shadow);
 }
 
 .input-meta {
