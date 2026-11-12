@@ -1,0 +1,15 @@
+{
+  "name": "studygen-ai",
+  "version": "1.0.0",
+  "description": "StudyGen AI — full-stack study tool",
+  "private": true,
+  "scripts": {
+    "install": "npm install --prefix client && npm install --prefix server",
+    "start": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "dev": "npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
+
