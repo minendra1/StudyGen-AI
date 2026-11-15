@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "install": "npm install --prefix client && npm install --prefix server",
+    "build": "npm run build --prefix client",
     "start": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
     "dev": "npm start",
     "test": "npm test --prefix server && npm test --prefix client"

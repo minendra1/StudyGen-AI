@@ -9,7 +9,8 @@ const INITIAL_STATE = {
 
 // Uses the Render backend in production.
 // Falls back to the Vite proxy during local development.
-const API_URL = (import.meta.env?.VITE_API_URL || '').replace(/\/+$/, '');
+const rawApiUrl = (import.meta.env?.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl;
 
 /**
  * Validate the generated study material before rendering.
