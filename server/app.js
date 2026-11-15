@@ -7,14 +7,40 @@ import { AppError, ErrorCode } from './lib/errors.js';
 export function createApp({ generateCard } = {}) {
   const app = express();
 
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    'http://127.0.0.1:5173',
+    'https://study-gen-ai-sage.vercel.app',
+    process.env.CLIENT_URL,
+  ].filter(Boolean);
+
   app.use(cors({
-    origin: [
-      'http://localhost:5173',
-      'https://YOUR-VERCEL-DOMAIN.vercel.app'
-    ]
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. server-to-server health checks, curl, mobile)
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/study-gen-ai[a-z0-9-]*\.vercel\.app$/.test(origin);
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+    credentials: true,
   }));
 
   app.use(express.json());
+
+  app.get('/', (_req, res) => {
+    res.json({
+      status: 'ok',
+      message: 'StudyGen AI backend is running'
+    });
+  });
 
   app.get('/api/health', (_req, res) => {
     res.json({

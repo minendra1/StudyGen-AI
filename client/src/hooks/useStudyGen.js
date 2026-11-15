@@ -7,13 +7,12 @@ const INITIAL_STATE = {
   error: null,
 };
 
-// Production backend URL from Vercel environment variables.
+// Uses the Render backend in production.
 // Falls back to the Vite proxy during local development.
-const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_URL = (import.meta.env?.VITE_API_URL || '').replace(/\/+$/, '');
 
 /**
- * Defensive runtime validation on the client to ensure we never render
- * partially received or structurally invalid study data.
+ * Validate the generated study material before rendering.
  */
 export function isValidStudyData(payload) {
   if (!payload || typeof payload !== 'object') return false;
@@ -86,13 +85,8 @@ export function isValidStudyData(payload) {
 }
 
 /**
- * Custom hook managing:
- * - Study material generation
- * - API communication
- * - Request cancellation
- * - Stale-response prevention
- * - Frontend response validation
- * - Error handling and retry
+ * Custom hook managing study generation, API communication,
+ * request cancellation, validation, and error handling.
  */
 export function useStudyGen() {
   const [state, setState] = useState(INITIAL_STATE);
@@ -102,7 +96,7 @@ export function useStudyGen() {
   const requestIdRef = useRef(0);
   const lastTopicRef = useRef('');
 
-  // Abort any in-flight request when the component unmounts.
+  // Abort requests when the component unmounts.
   useEffect(() => {
     return () => {
       requestIdRef.current += 1;
@@ -115,7 +109,6 @@ export function useStudyGen() {
       typeof rawTopic === 'string' ? rawTopic.trim() : '';
 
     if (!topic) {
-      // Cancel any previous request when input is invalid.
       controllerRef.current?.abort();
       requestIdRef.current += 1;
 
@@ -130,13 +123,12 @@ export function useStudyGen() {
 
     lastTopicRef.current = topic;
 
-    // Cancel any previous in-flight request.
+    // Cancel any previous request.
     controllerRef.current?.abort();
 
     const controller = new AbortController();
     controllerRef.current = controller;
 
-    // Increment request counter to prevent stale responses.
     const currentRequestId = ++requestIdRef.current;
 
     setState({
@@ -146,17 +138,14 @@ export function useStudyGen() {
     });
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/generate`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ topic }),
-          signal: controller.signal,
-        }
-      );
+      const response = await fetch(`${API_URL}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ topic }),
+        signal: controller.signal,
+      });
 
       // Ignore outdated responses.
       if (currentRequestId !== requestIdRef.current) return;
@@ -166,7 +155,6 @@ export function useStudyGen() {
       try {
         payload = await response.json();
       } catch {
-        // Handle non-JSON server responses.
         if (currentRequestId !== requestIdRef.current) return;
 
         setState({
@@ -199,7 +187,7 @@ export function useStudyGen() {
         return;
       }
 
-      // Validate the response before rendering.
+      // Validate response before rendering.
       if (!isValidStudyData(payload?.data)) {
         setState({
           status: 'error',
@@ -219,7 +207,6 @@ export function useStudyGen() {
         error: null,
       });
     } catch (err) {
-      // Ignore aborted or outdated requests.
       if (
         err?.name === 'AbortError' ||
         currentRequestId !== requestIdRef.current
