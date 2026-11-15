@@ -2,6 +2,7 @@
 
 [![Live Frontend](https://img.shields.io/badge/Live%20App-Vercel-black?logo=vercel)](https://study-gen-ai-sage.vercel.app)
 [![Live Backend](https://img.shields.io/badge/Backend%20API-Render-46e3b7?logo=render)](https://study-gen-ai-backend.onrender.com)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?logo=github)](https://github.com/minendra1/StudyGen-AI)
 [![Tests](https://img.shields.io/badge/tests-27%20passed%20%2F%200%20failed-success)](tests)
 [![Stack](https://img.shields.io/badge/stack-React%2018%20%7C%20Express%205%20%7C%20Groq%20%7C%20Zod-blue)](#tech-stack)
 
@@ -11,10 +12,11 @@ StudyGen AI is an interactive study tool built for the **Frontend Internship Ass
 
 ---
 
-## Live Deployments
+## Live Deployments & Links
 
 - **Frontend (Vercel):** [https://study-gen-ai-sage.vercel.app](https://study-gen-ai-sage.vercel.app)
 - **Backend (Render):** [https://study-gen-ai-backend.onrender.com](https://study-gen-ai-backend.onrender.com) *(Health check: `/api/health`)*
+- **GitHub Repository:** [https://github.com/minendra1/StudyGen-AI](https://github.com/minendra1/StudyGen-AI)
 - **Demo Video:** `[INSERT SHORT SCREEN RECORDING LINK HERE]`
 
 ---
@@ -99,8 +101,8 @@ flowchart LR
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/studygen-ai.git
-cd studygen-ai
+git clone https://github.com/minendra1/StudyGen-AI.git
+cd StudyGen-AI
 
 # 2. Install all dependencies (root, client, server)
 npm install
