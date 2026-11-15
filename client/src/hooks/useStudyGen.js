@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const INITIAL_STATE = {
@@ -5,6 +6,10 @@ const INITIAL_STATE = {
   data: null,
   error: null,
 };
+
+// Production backend URL from Vercel environment variables.
+// Falls back to the Vite proxy during local development.
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 /**
  * Defensive runtime validation on the client to ensure we never render
@@ -17,21 +22,49 @@ export function isValidStudyData(payload) {
 
   if (typeof title !== 'string' || !title.trim()) return false;
   if (typeof summary !== 'string' || !summary.trim()) return false;
-  if (!['beginner', 'intermediate', 'advanced'].includes(difficulty)) return false;
 
-  if (!Array.isArray(concepts) || concepts.length === 0) return false;
+  if (!['beginner', 'intermediate', 'advanced'].includes(difficulty)) {
+    return false;
+  }
+
+  if (!Array.isArray(concepts) || concepts.length === 0) {
+    return false;
+  }
+
   const validConcepts = concepts.every(
-    (c) => c && typeof c.term === 'string' && c.term.trim() && typeof c.definition === 'string' && c.definition.trim(),
+    (c) =>
+      c &&
+      typeof c.term === 'string' &&
+      c.term.trim() &&
+      typeof c.definition === 'string' &&
+      c.definition.trim()
   );
+
   if (!validConcepts) return false;
 
-  if (!Array.isArray(flashcards) || flashcards.length < 5 || flashcards.length > 10) return false;
+  if (
+    !Array.isArray(flashcards) ||
+    flashcards.length < 5 ||
+    flashcards.length > 10
+  ) {
+    return false;
+  }
+
   const validFlashcards = flashcards.every(
-    (f) => f && typeof f.front === 'string' && f.front.trim() && typeof f.back === 'string' && f.back.trim(),
+    (f) =>
+      f &&
+      typeof f.front === 'string' &&
+      f.front.trim() &&
+      typeof f.back === 'string' &&
+      f.back.trim()
   );
+
   if (!validFlashcards) return false;
 
-  if (!Array.isArray(quiz) || quiz.length < 5 || quiz.length > 10) return false;
+  if (!Array.isArray(quiz) || quiz.length < 5 || quiz.length > 10) {
+    return false;
+  }
+
   const validQuiz = quiz.every(
     (q) =>
       q &&
@@ -39,20 +72,27 @@ export function isValidStudyData(payload) {
       q.question.trim() &&
       Array.isArray(q.options) &&
       q.options.length === 4 &&
-      q.options.every((opt) => typeof opt === 'string' && opt.trim()) &&
+      q.options.every(
+        (opt) => typeof opt === 'string' && opt.trim()
+      ) &&
       Number.isInteger(q.answerIndex) &&
       q.answerIndex >= 0 &&
       q.answerIndex <= 3 &&
       typeof q.explanation === 'string' &&
-      q.explanation.trim(),
+      q.explanation.trim()
   );
 
   return validQuiz;
 }
 
 /**
- * Custom hook managing the StudyGen AI generation lifecycle,
- * request cancellation via AbortController, and stale-response prevention.
+ * Custom hook managing:
+ * - Study material generation
+ * - API communication
+ * - Request cancellation
+ * - Stale-response prevention
+ * - Frontend response validation
+ * - Error handling and retry
  */
 export function useStudyGen() {
   const [state, setState] = useState(INITIAL_STATE);
@@ -71,24 +111,32 @@ export function useStudyGen() {
   }, []);
 
   const generate = useCallback(async (rawTopic) => {
-    const topic = typeof rawTopic === 'string' ? rawTopic.trim() : '';
+    const topic =
+      typeof rawTopic === 'string' ? rawTopic.trim() : '';
+
     if (!topic) {
+      // Cancel any previous request when input is invalid.
+      controllerRef.current?.abort();
+      requestIdRef.current += 1;
+
       setState({
         status: 'error',
         data: null,
         error: 'Please enter a topic or study notes before generating.',
       });
+
       return;
     }
 
-    lastTopicRef.current = rawTopic;
+    lastTopicRef.current = topic;
 
     // Cancel any previous in-flight request.
     controllerRef.current?.abort();
+
     const controller = new AbortController();
     controllerRef.current = controller;
 
-    // Increment request counter to guard against out-of-order responses.
+    // Increment request counter to prevent stale responses.
     const currentRequestId = ++requestIdRef.current;
 
     setState({
@@ -98,22 +146,29 @@ export function useStudyGen() {
     });
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic }),
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        `${API_URL}/api/generate`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ topic }),
+          signal: controller.signal,
+        }
+      );
 
-      // Ignore if a newer request has already been initiated.
+      // Ignore outdated responses.
       if (currentRequestId !== requestIdRef.current) return;
 
       let payload = null;
+
       try {
         payload = await response.json();
       } catch {
-        // Non-JSON response (e.g. proxy error when backend is unreachable).
+        // Handle non-JSON server responses.
         if (currentRequestId !== requestIdRef.current) return;
+
         setState({
           status: 'error',
           data: null,
@@ -121,14 +176,17 @@ export function useStudyGen() {
             ? 'Received an invalid response from the server. Please try again.'
             : `Server error (${response.status}). Please verify the backend is running and try again.`,
         });
+
         return;
       }
 
       if (currentRequestId !== requestIdRef.current) return;
 
+      // Handle HTTP errors.
       if (!response.ok) {
         const serverMessage =
-          typeof payload?.message === 'string' && payload.message.trim()
+          typeof payload?.message === 'string' &&
+            payload.message.trim()
             ? payload.message
             : `Request failed with status ${response.status}. Please try again.`;
 
@@ -137,47 +195,61 @@ export function useStudyGen() {
           data: null,
           error: serverMessage,
         });
+
         return;
       }
 
+      // Validate the response before rendering.
       if (!isValidStudyData(payload?.data)) {
         setState({
           status: 'error',
           data: null,
-          error: 'Received incomplete or invalid study material. Please retry.',
+          error:
+            'Received incomplete or invalid study material. Please retry.',
         });
+
         return;
       }
 
       setGenerationId((id) => id + 1);
+
       setState({
         status: 'success',
         data: payload.data,
         error: null,
       });
     } catch (err) {
-      // Aborted requests must never overwrite state or show an error.
-      if (err?.name === 'AbortError' || currentRequestId !== requestIdRef.current) {
+      // Ignore aborted or outdated requests.
+      if (
+        err?.name === 'AbortError' ||
+        currentRequestId !== requestIdRef.current
+      ) {
         return;
       }
 
       setState({
         status: 'error',
         data: null,
-        error: 'Network error while contacting the server. Check your connection and try again.',
+        error:
+          'Network error while contacting the server. Check your connection and try again.',
       });
     }
   }, []);
 
+  // Retry the previous generation.
   const retry = useCallback(() => {
-    if (lastTopicRef.current && lastTopicRef.current.trim().length > 0) {
+    if (lastTopicRef.current) {
       generate(lastTopicRef.current);
     }
   }, [generate]);
 
+  // Reset the current study session.
   const reset = useCallback(() => {
     controllerRef.current?.abort();
     requestIdRef.current += 1;
+
+    lastTopicRef.current = '';
+
     setState(INITIAL_STATE);
   }, []);
 
@@ -186,10 +258,9 @@ export function useStudyGen() {
     data: state.data,
     error: state.error,
     generationId,
-    canRetry: Boolean(lastTopicRef.current && lastTopicRef.current.trim().length > 0),
+    canRetry: Boolean(lastTopicRef.current),
     generate,
     retry,
     reset,
   };
 }
-
