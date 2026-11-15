@@ -25,11 +25,9 @@ StudyGen AI is an interactive study tool built for the **Frontend Internship Ass
 |:---:|:---:|
 | ![Light Mode](docs/screenshots/light-mode.png) | ![Dark Mode](docs/screenshots/dark-mode.png) |
 
-| 3D Flip Flashcards | Quiz & Retest Mode |
-|:---:|:---:|
-| ![Flashcards](docs/screenshots/flashcards.png) | ![Quiz](docs/screenshots/quiz.png) |
-
-*(Place local screenshots in `docs/screenshots/`)*
+| 3D Flip Flashcards | Practice Quiz | Retest Missed Questions |
+|:---:|:---:|:---:|
+| ![Flashcards](docs/screenshots/flashcards.png) | ![Quiz](docs/screenshots/quiz.png) | ![Retest Mode](docs/screenshots/retest.png) |
 
 ---
 
