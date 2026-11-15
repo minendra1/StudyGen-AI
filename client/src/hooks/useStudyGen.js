@@ -7,13 +7,18 @@ const INITIAL_STATE = {
   error: null,
 };
 
-// Uses the Render backend in production.
+// Backend URL from Vercel environment variables.
 // Falls back to the Vite proxy during local development.
-const rawApiUrl = (import.meta.env?.VITE_API_URL || '').trim().replace(/\/+$/, '');
-const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl.slice(0, -4) : rawApiUrl;
+const rawApiUrl = (import.meta.env?.VITE_API_URL || '')
+  .trim()
+  .replace(/\/+$/, '');
+
+const API_URL = rawApiUrl.endsWith('/api')
+  ? rawApiUrl.slice(0, -4)
+  : rawApiUrl;
 
 /**
- * Validate the generated study material before rendering.
+ * Validate generated study material before rendering.
  */
 export function isValidStudyData(payload) {
   if (!payload || typeof payload !== 'object') return false;
@@ -86,8 +91,13 @@ export function isValidStudyData(payload) {
 }
 
 /**
- * Custom hook managing study generation, API communication,
- * request cancellation, validation, and error handling.
+ * Custom hook managing:
+ * - Study material generation
+ * - API communication
+ * - Request cancellation
+ * - Stale-response prevention
+ * - Frontend response validation
+ * - Error handling and retry
  */
 export function useStudyGen() {
   const [state, setState] = useState(INITIAL_STATE);
@@ -97,7 +107,7 @@ export function useStudyGen() {
   const requestIdRef = useRef(0);
   const lastTopicRef = useRef('');
 
-  // Abort requests when the component unmounts.
+  // Abort any in-flight request when the component unmounts.
   useEffect(() => {
     return () => {
       requestIdRef.current += 1;
@@ -124,12 +134,13 @@ export function useStudyGen() {
 
     lastTopicRef.current = topic;
 
-    // Cancel any previous request.
+    // Cancel any previous in-flight request.
     controllerRef.current?.abort();
 
     const controller = new AbortController();
     controllerRef.current = controller;
 
+    // Increment request counter to prevent stale responses.
     const currentRequestId = ++requestIdRef.current;
 
     setState({
@@ -188,7 +199,7 @@ export function useStudyGen() {
         return;
       }
 
-      // Validate response before rendering.
+      // Validate the response before rendering.
       if (!isValidStudyData(payload?.data)) {
         setState({
           status: 'error',
@@ -208,6 +219,7 @@ export function useStudyGen() {
         error: null,
       });
     } catch (err) {
+      // Ignore aborted or outdated requests.
       if (
         err?.name === 'AbortError' ||
         currentRequestId !== requestIdRef.current
